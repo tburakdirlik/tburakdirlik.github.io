@@ -6,6 +6,8 @@ tags: [rbcd, kerberos, active-directory, penetration-testing, red-team]
 description: "What is Resource-Based Constrained Delegation, how is it exploited, and a full end-to-end attack chain walk-through using RBCD-Pwn."
 ---
 
+![Cyber Wave](/assets/wave.gif){: .normal }
+
 ## Introduction
 
 One of the first techniques that comes to mind when talking about privilege escalation in Active Directory environments is the **Resource-Based Constrained Delegation (RBCD)** attack. In this post I will explain what RBCD is, why it is dangerous, how it is carried out step by step, and finally how I compressed the entire attack chain into a single command with my automation tool **RBCD-Pwn**.
