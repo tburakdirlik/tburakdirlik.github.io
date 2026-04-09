@@ -90,7 +90,7 @@ pageviews:
 #     light — Use the light color scheme
 #     dark — Use the dark color scheme
 #
-# theme mode: [light | dark]
+theme mode: [light | dark]
 # This will be the default mode when the page is first loaded.
 theme_mode: dark
 
