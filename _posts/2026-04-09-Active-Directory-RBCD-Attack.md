@@ -73,7 +73,7 @@ MATCH p=shortestPath(
 > Note: within `shortestPath()`, variable-length relationship patterns cannot carry a named variable — use `[:RelType*1..]` syntax, not `[r:RelType*1..]`.
 {: .prompt-tip }
 
-![BloodHound RBCD Path](/assets/img/rbcd/bloodhound.png)
+![BloodHound RBCD Path](/assets/bloodhound.png)
 
 ---
 
