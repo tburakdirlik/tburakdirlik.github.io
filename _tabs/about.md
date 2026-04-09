@@ -11,14 +11,10 @@ Alongside my core work, I build and test AI-powered tools for automated vulnerab
 As a Bug Bounty hunter, I focus on real-world targets and complex attack surfaces, identifying and responsibly exploiting vulnerabilities in modern systems.
 Everything I break, build, and learn — documented here.
 
----
+**Education**
 
-## Education
+Akdeniz University — Computer Science Engineering (2022)
 
-**Akdeniz University** — Computer Science Engineering *(2022)*
+**Certifications**
 
----
-
-## Certifications
-
-**TSE (Turkish Standards Institute)** — Senior Web Penetration Testing Specialist
+TSE (Turkish Standards Institute) — Senior Web Penetration Testing Specialist (2024)
