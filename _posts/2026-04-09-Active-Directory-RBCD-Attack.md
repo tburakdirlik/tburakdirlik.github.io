@@ -1,6 +1,6 @@
 ---
 title: "Privilege Escalation in Active Directory: RBCD Attack"
-date: 2026-04-09 10:00:00 +0300
+date: 2026-04-15 21:49:00 +0300
 categories: [Active Directory, Privilege Escalation]
 tags: [rbcd, kerberos, active-directory]
 description: "What is Resource-Based Constrained Delegation, how is it exploited, and a full end-to-end attack chain walk-through using RBCD-Pwn."
@@ -24,19 +24,21 @@ Microsoft has introduced three distinct delegation models over the years:
 
 | Type | Description | Risk |
 |------|-------------|------|
-| Unconstrained Delegation | Forwards credentials to any service | Critical |
-| Constrained Delegation (KCD) | Forwards credentials to a specific set of services (defined by an admin) | Medium |
+| Unconstrained Delegation | Forwards the user's TGT to any service | Critical |
+| Constrained Delegation (KCD) | Forwards a service ticket to a specific set of services (defined by an admin) | Medium |
 | Resource-Based Constrained Delegation (RBCD) | The resource itself decides who can delegate to it | Medium–High |
 
 ### How Does RBCD Work?
 
 RBCD was introduced with Windows Server 2012. Its fundamental difference from classic Constrained Delegation is: **the resource, not a Domain Admin, controls who is allowed to act on its behalf.**
 
-This is managed through the `msDS-AllowedToActOnBehalfOfOtherIdentity` attribute on Active Directory computer objects. When this attribute is set on a computer object, the account referenced inside it can **impersonate any user** on that computer.
+This is managed through the `msDS-AllowedToActOnBehalfOfOtherIdentity` attribute on Active Directory computer objects. When this attribute is set on a computer object, the account referenced inside it can **impersonate most users** on that computer — with the exception of accounts explicitly protected from delegation (covered in the Defense section).
 
 The technical flow works as follows:
 
 ```
+[Legitimate delegation scenario]
+
 User A      → calls Service X
 Service X   → S4U2Self  → obtains a TGS on behalf of User A (for itself)
 Service X   → S4U2Proxy → uses that TGS to access Service Y
@@ -45,7 +47,18 @@ Service X   → S4U2Proxy → uses that TGS to access Service Y
 - **S4U2Self (Service for User to Self):** Allows a service to obtain a service ticket for itself on behalf of an arbitrary user — no user interaction required.
 - **S4U2Proxy (Service for User to Proxy):** Uses the ticket obtained via S4U2Self to access a third service on the user's behalf.
 
-- **Important distinction:** S4U2Self alone does not require the resulting ticket to be "forwardable." When RBCD is configured, the KDC will issue a forwardable ticket during S4U2Self so that S4U2Proxy can proceed — this is the key enabler of the attack.
+- **Important distinction:** In classic constrained delegation (KCD), S4U2Proxy requires the S4U2Self evidence ticket to be forwardable. RBCD removes this requirement entirely: when the target resource's `msDS-AllowedToActOnBehalfOfOtherIdentity` attribute points to `DORK$`, the KDC honours S4U2Proxy regardless of whether the evidence ticket carries the forwardable flag. The KDC does not make the S4U2Self ticket forwardable — it simply stops caring whether it is. This is the key difference from classic KCD, and what makes RBCD particularly powerful in attack scenarios.
+
+In the attack scenario, **`DORK$` plays the role of Service X** from the diagram above. The flow maps directly to the exploit chain:
+
+```
+[Attack scenario]
+
+DORK$  → S4U2Self  → obtains a TGS impersonating Administrator (for itself)
+DORK$  → S4U2Proxy → uses that TGS to request a CIFS ticket on the target machine
+```
+
+Because `msDS-AllowedToActOnBehalfOfOtherIdentity` on the target computer is set to point at `DORK$`, the KDC honours both steps and issues a CIFS service ticket impersonating Administrator — no Administrator password or hash required.
 
 ---
 
@@ -55,9 +68,12 @@ Service X   → S4U2Proxy → uses that TGS to access Service Y
 
 Three conditions must be met to successfully execute an RBCD attack:
 
-1. **`GenericWrite` or `GenericAll` over the target computer object:** The attacker needs permission to modify the `msDS-AllowedToActOnBehalfOfOtherIdentity` attribute on the target. This can be discovered easily with BloodHound.
+1. **Write access over the target computer object's `msDS-AllowedToActOnBehalfOfOtherIdentity` attribute:** Several ACL edges can satisfy this — `GenericWrite`, `GenericAll`, `WriteDACL` (which lets the attacker grant themselves write rights), `WriteProperty` scoped to the specific attribute, or ownership of the object. BloodHound surfaces all of these paths, including indirect ones through group membership.
 
-2. **Ability to create a machine account:** Adding a new computer to the domain requires `ms-DS-MachineAccountQuota` to be greater than 0. The **default value is 10**, meaning any authenticated domain user can add up to 10 machine accounts.
+2. **An account with an SPN (or the ability to create one):** The S4U2Proxy step requires the delegating account to have a Service Principal Name registered. The most common way to satisfy this is creating a new machine account (machine accounts get an SPN automatically). If the attacker already controls a service account or any account with a registered SPN, Step 1 can be skipped entirely — the existing account can be used directly as the delegating principal.
+
+   > **Note:** `ms-DS-MachineAccountQuota` controls how many machine accounts a regular user can create. The **default value is 10**, meaning any authenticated domain user can add up to 10 machine accounts. If this quota is 0 and no SPN-bearing account is already controlled, the most common attack path (machine account creation) is blocked — though the attack remains viable if the attacker controls an existing account with an SPN.
+   {: .prompt-tip }
 
 3. **Network access to the Domain Controller:** LDAP (389/636), Kerberos (88), and SMB (445) must be reachable.
 
@@ -101,9 +117,12 @@ Successful output:
 > The `-hashes` flag uses `LM:NT` format. Passing `:NTLMHASH` (with an empty LM portion) is the correct syntax for pass-the-hash.
 {: .prompt-tip }
 
+> **Already have a service account with an SPN?** If you control an account that already has a Service Principal Name registered (e.g. a service account or any existing machine account), you can skip this step and use that account directly in Steps 2 and 3. Machine account creation is only required when no SPN-bearing account is available.
+{: .prompt-tip }
+
 ### Step 2 — Configure the RBCD Attribute
 
-Now modify the `msDS-AllowedToActOnBehalfOfOtherIdentity` attribute on the target computer object to point to `DORK$`. This is done over LDAP using impacket's `rbcd.py`:
+Now modify the `msDS-AllowedToActOnBehalfOfOtherIdentity` attribute on the target computer object to point to `DORK$`. This is done over LDAP using [tothi's `rbcd.py`](https://github.com/tothi/rbcd-attack):
 
 ```bash
 python3 rbcd.py -f 'DORK' \
@@ -113,11 +132,16 @@ python3 rbcd.py -f 'DORK' \
   -hashes :NTLM_HASH
 ```
 
-After this step, `DORK$` is authorized to impersonate **any user** (including Administrator) on the target computer.
+> **Note on the `-f` parameter:** `rbcd.py` expects the SAMAccountName **without** the trailing `$`. Even though the account was created as `DORK$`, pass `-f DORK` here — the tool appends `$` internally when resolving the account in LDAP.
+{: .prompt-tip }
+
+After this step, `DORK$` is authorized to impersonate **most users** on the target computer — including Administrator, unless that account is protected from delegation (e.g. a member of Protected Users or flagged as "Account is sensitive and cannot be delegated").
 
 ### Step 3 — Request a Kerberos Ticket as Administrator
 
 Using the S4U2Self → S4U2Proxy chain, request a CIFS service ticket impersonating Administrator:
+
+> **Why CIFS?** `cifs/` maps to the SMB file-sharing service. Requesting a CIFS ticket gives direct access to the target's file system and named pipes — exactly what psexec needs to land a shell. It is the most versatile SPN for lateral movement: SMB is almost always reachable on Windows targets and enables both file access and remote service execution in one ticket.
 
 ```bash
 impacket-getST \
@@ -151,6 +175,9 @@ Result:
 C:\Windows\system32> whoami
 nt authority\system
 ```
+
+> **Why `SYSTEM` and not `Administrator`?** psexec authenticates as the impersonated Administrator (who has local admin rights on the target), then creates a remote Windows service to execute the payload. Windows services run under `NT AUTHORITY\SYSTEM` by default — that is why the resulting shell is SYSTEM-level, not the Administrator account itself.
+{: .prompt-tip }
 
 ---
 
@@ -220,7 +247,7 @@ Protecting against RBCD attacks requires controls at both the configuration and 
 
 ### 1. Set MachineAccountQuota to 0
 
-This single change breaks the attack chain at its very first link. If regular users cannot add computer accounts to the domain, they have nowhere to delegate to.
+This change eliminates the most common RBCD attack path: if regular users cannot create computer accounts, they have no machine account to delegate from. Note that this does not fully eliminate RBCD abuse — an attacker who already controls a service account or any account with a registered SPN can still proceed without creating a new machine account. Pairing this control with tight ACL hygiene (see below) is essential.
 
 ```powershell
 Set-ADDomain -Identity "domain.local" `
@@ -231,7 +258,7 @@ When machine accounts genuinely need to be created, this should be delegated to 
 
 ### 2. Audit and Tighten ACLs on Computer Objects
 
-Run BloodHound and review all paths that lead to `GenericWrite` or `GenericAll` on computer objects. Standard user accounts should never hold these rights over computer objects.
+Run BloodHound and review all paths that lead to `GenericWrite`, `GenericAll`, `WriteDACL`, or `WriteProperty` (on `msDS-AllowedToActOnBehalfOfOtherIdentity`) over computer objects. Standard user accounts should never hold these rights over computer objects. Also check object ownership — an owner can grant themselves any permission without needing an explicit ACE.
 
 ```powershell
 # Enumerate GenericWrite permissions on all computer objects
@@ -245,7 +272,7 @@ Pay particular attention to accounts that gained these rights through group memb
 
 ### 3. Add Privileged Accounts to the Protected Users Group
 
-Accounts in the **Protected Users** security group cannot be used as a delegation target — the KDC will refuse to issue forwardable tickets for them, which means S4U2Proxy cannot impersonate them.
+Accounts in the **Protected Users** security group cannot be impersonated via delegation. Technically, S4U2Self can still be requested for a Protected Users member — but the KDC will not issue a forwardable ticket for such accounts, which causes the S4U2Proxy step to fail. The delegation chain breaks at S4U2Proxy, not at S4U2Self. This makes Protected Users membership the strongest per-account mitigation against RBCD impersonation, regardless of what `msDS-AllowedToActOnBehalfOfOtherIdentity` contains.
 
 ```powershell
 Add-ADGroupMember -Identity "Protected Users" -Members "Administrator"
@@ -284,11 +311,17 @@ The most reliable SIEM correlation rule is: **4741 followed by 5136 within a sho
 After testing, remove the rogue machine account to leave the environment clean:
 
 ```bash
-impacket-addcomputer 'domain.local/username:password' \
+impacket-addcomputer 'domain.local/username' \
   -dc-ip 10.10.10.10 \
+  -hashes :NTLM_HASH \
   -computer-name 'DORK$' \
   -delete
 ```
+
+> Replace `-hashes :NTLM_HASH` with the same credential format you used throughout the attack (hash or plaintext password). If you used a plaintext password, swap `-hashes :NTLM_HASH` for `-password 'YourPassword'`.
+
+> **Impacket version note:** Older versions of `impacket-addcomputer` use `-action delete` instead of `-delete`. If the command above returns an unrecognised argument error, run `impacket-addcomputer --help` to confirm the correct flag for your installed version before proceeding.
+{: .prompt-warning }
 
 Also verify that `msDS-AllowedToActOnBehalfOfOtherIdentity` was not left set on the target computer object — the account deletion alone does not clear it.
 
@@ -303,7 +336,7 @@ On the defensive side, the remediation list is straightforward:
 - `MachineAccountQuota = 0`
 - Regular ACL audits with BloodHound
 - Protected Users group for privileged accounts
-- SIEM correlation on Event ID 4741 + 5136
+- SIEM correlation on Event ID 4741 + 5136 (and 4768/4769 for ticket anomalies — see Detection section for the full list)
 
 When applied together, these controls make a successful RBCD attack significantly harder to pull off.
 
@@ -315,7 +348,6 @@ When applied together, these controls make a successful RBCD attack significantl
 ---
 
 ## References
-
 
 - [Impacket GitHub](https://github.com/fortra/impacket)
 - [BloodHound Documentation](https://bloodhound.readthedocs.io/)
