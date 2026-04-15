@@ -16,7 +16,7 @@ timezone: Europe/Istanbul
 
 title: Burak Dirlik # the main title
 
-tagline: Cyber Security Engineer # it will display as the subtitle
+tagline: 
 
 description: >- # used by seo meta and the atom feed
   A minimal, responsive and feature-rich Jekyll theme for technical writing.
