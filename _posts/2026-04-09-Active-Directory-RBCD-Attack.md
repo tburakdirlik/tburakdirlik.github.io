@@ -98,7 +98,7 @@ MATCH p=shortestPath(
 
 ### Step 1 — Create a Fake Machine Account
 
-The foundation of this attack is adding a rogue computer account to the domain. This account will later be granted delegation rights and will request a service ticket on behalf of Administrator.
+This attack is based on adding a fake computer account to the domain. This account will later be granted delegation rights and will request a service ticket on behalf of Administrator.
 
 ```bash
 impacket-addcomputer 'domain.local/john.doe' \
