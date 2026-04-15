@@ -236,7 +236,7 @@ Step 5: impacket-psexec → interactive SYSTEM shell
 
 Every command executed by the tool is printed with a `[CMD]` label before it runs — full transparency, and a great way to understand each step while it happens.
 
-![RBCD-Pwn PoC — full attack chain from fake machine account creation to SYSTEM shell](https://raw.githubusercontent.com/tburakdirlik/Rbcd-Exploiter/main/poc.png)
+![RBCD-Pwn PoC — full attack chain from fake machine account creation to SYSTEM shell](https://raw.githubusercontent.com/tburakdirlik/Rbcd-Exploiter/refs/heads/main/1.png)
 _Full attack chain: domain auto-detection → DORK$ creation → LDAP RBCD write → S4U2Self/S4U2Proxy → SYSTEM shell on RESOURCEDC_
 
 ---
