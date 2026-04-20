@@ -13,7 +13,7 @@ Everything I break, build, and learn — documented here.
 
 **Education**
 
-Akdeniz University — Computer Science Engineering (2022)
+Akdeniz University — Computer Science Engineering (2017-2022)
 
 **Certifications**
 
