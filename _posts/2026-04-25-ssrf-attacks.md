@@ -1,6 +1,6 @@
 ---
 title: "SSRF Deep Dive: From Internal Services to Cloud Metadata"
-date: 2026-04-25 10:00:00 +0300
+date: 2026-04-25 00:00:00 +0300
 categories: [Web Security, Pentest]
 tags: [ssrf, cloud-security, aws, web-security, offensive-security, pentest]
 description: "From basic internal port scanning to AWS/GCP metadata exploitation — SSRF walked through real pentest scenarios, filter bypasses, and cloud attack paths."
