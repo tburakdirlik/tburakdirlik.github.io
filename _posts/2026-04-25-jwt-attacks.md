@@ -4,6 +4,9 @@ date: 2026-04-24 10:00:00 +0300
 categories: [Web Security, Pentest]
 tags: [jwt, authentication, web-security, offensive-security, pentest]
 description: "From alg:none to kid injection, from algorithm confusion to jku manipulation — the JWT attack surface walked through real pentest scenarios."
+image:
+  path: /assets/rose.jpg
+  alt: "JWT attacks cover"
 ---
 
 JWT (JSON Web Token) is the de facto standard for session handling in most modern web apps. It's stateless, plays nicely with microservices, and looks simple to implement. That last part is exactly why it's a goldmine on the offensive side. JWT itself isn't bad — what's bad is that almost every library ships with at least one default that will burn someone.
