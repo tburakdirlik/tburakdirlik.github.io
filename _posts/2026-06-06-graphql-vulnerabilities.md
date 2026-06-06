@@ -5,7 +5,7 @@ categories: [Web Security, GraphQL]
 tags: [graphql, bug-bounty, api-security, idor]
 description: "What GraphQL vulnerabilities are and how to find them in bug bounty — introspection, IDOR/BOLA, injection, and rate-limit bypass via batching, explained from scratch with examples."
 image:
-  path: /assets/wave.gif
+  path: /assets/0be4fb07f9dc821a0bfd3476221f2bfb.jpg
 ---
 
 ## Introduction
