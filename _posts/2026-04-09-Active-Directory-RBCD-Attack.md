@@ -5,7 +5,7 @@ categories: [Active Directory, Privilege Escalation]
 tags: [rbcd, kerberos, active-directory]
 description: "What is Resource-Based Constrained Delegation, how is it exploited, and a full end-to-end attack chain walk-through using RBCD-Pwn."
 image:
-  path: /assets/wave.gif
+  path: 
 ---
 
 ## Introduction
