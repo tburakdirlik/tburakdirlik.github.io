@@ -1,6 +1,6 @@
 ---
 title: "Privilege Escalation in Active Directory: RBCD Attack"
-date: 2026-04-15 21:49:00 +0300
+date: 2026-08-12 02:28:00 +0300
 categories: [Active Directory, Privilege Escalation]
 tags: [rbcd, kerberos, active-directory]
 description: "What is Resource-Based Constrained Delegation, how is it exploited, and a full end-to-end attack chain walk-through using RBCD-Pwn."
