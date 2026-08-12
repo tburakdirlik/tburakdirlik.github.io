@@ -28,9 +28,6 @@ url: "https://burakdirlik.dev"
 github:
   username: tburakdirlik # change to your GitHub username
 
-twitter:
-  username: tburakdirlik # change to your Twitter username
-
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
@@ -39,7 +36,6 @@ social:
   fediverse_handle: # fill in your fediverse handle. E.g. "@username@domain.com"
   links:
     # The first element serves as the copyright owner's link
-    - https://twitter.com/tburakdirlik # change to your Twitter homepage
     - https://github.com/tburakdirlik # change to your GitHub homepage
     - https://www.linkedin.com/in/tburakdirlik
     # Uncomment below to add more social links
