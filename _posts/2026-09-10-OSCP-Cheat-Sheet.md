@@ -1,10 +1,7 @@
 -----
 
-## title: “OSCP Cheat Sheet”
-date: 2026-09-10 12:00:00 +0300
-categories: [Cheat Sheet, OSCP]
-tags: [oscp, pentest, active-directory, privilege-escalation, web, enumeration]
-description: “Personal command reference for OSCP-style engagements: enumeration, web attacks, Active Directory, and Windows/Linux privilege escalation.”
+## “OSCP Cheat Sheet”
+
 
 KONU BAŞLIKLARI
 
